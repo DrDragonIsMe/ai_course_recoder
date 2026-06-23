@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		02E215131A74576EE48A146C /* RecordingPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54707D78CA5526D3B4C33C58 /* RecordingPipeline.swift */; };
 		034F4B2394B31165FB170305 /* RecordCourses.xcodeproj in Resources */ = {isa = PBXBuildFile; fileRef = 6E49699CBB1D9AD61EBC52F1 /* RecordCourses.xcodeproj */; };
+		0A82A7A98DDB3CD80B16DB1C /* CameraLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB98F3392AA14880B04CD4EE /* CameraLayout.swift */; };
 		0B85CF3870CCFC9D2936A3DE /* PermissionsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55AAAD87FA294617FFB05A02 /* PermissionsManager.swift */; };
 		1226FE95E596578848084687 /* PreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE83ACEE487AB3D11233632 /* PreviewView.swift */; };
 		1461AE01D599458B02025C58 /* VideoCompositor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDB13214ACA9AC14C5B72175 /* VideoCompositor.swift */; };
@@ -17,15 +18,19 @@
 		5949C6FC1B37BCC66D5E0EBF /* FloatingToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B1469A9CF232254E48B709F /* FloatingToolbar.swift */; };
 		5F6B33D227897545CFA70385 /* RecordingWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D34B2496E5B3A0A01914011 /* RecordingWindow.swift */; };
 		5FEBBDFEC7E28458CEF9F4EB /* AnnotationToolbarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A6E36CCE44EB148938BF9F /* AnnotationToolbarView.swift */; };
+		78CFDE82E1AA90830038479E /* LayoutRegion.swift in Sources */ = {isa = PBXBuildFile; fileRef = C476AB0A1A12B560DFFAC034 /* LayoutRegion.swift */; };
+		7B4D769F4B2A7FFC965D5D32 /* RecordingLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3DA70AB1893550D20AAFEA5 /* RecordingLayoutTests.swift */; };
 		7ED7BFBA5269CD9D83E28667 /* RecordCoursesApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C8B6BB6FB9631174188F452 /* RecordCoursesApp.swift */; };
 		804ADDC9413EB0027C7E4B71 /* Stroke.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB47BC2BA550D5D54E9D4F04 /* Stroke.swift */; };
 		8A65FE1FF8CB7E69A78DD7F2 /* RecordingError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C4D1497B459F0491DD9596C /* RecordingError.swift */; };
 		8CBAAD38F08003CF9C19593C /* AnnotationSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 647E571345A3182BC0618BF4 /* AnnotationSession.swift */; };
 		9A471AF586B5139C8BBFF0E0 /* RecordingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C9564EFB23C5D673D15E981 /* RecordingViewModel.swift */; };
+		A831553602A5303E0AA25C1B /* ColorHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4216CFE12DC222740B8C745F /* ColorHelper.swift */; };
 		A9471E9967A0DC5EF0D101AD /* CaptureTarget.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6707CD53B931689314EA028 /* CaptureTarget.swift */; };
 		A98E765B2BE7BB1BB4B8156B /* ScreenHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCA03F4AD419DCB04836E83F /* ScreenHelper.swift */; };
 		B0E09F560562D226A0CE37D8 /* AnnotationOverlayWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10EADA416C45BC40ECD4FDC9 /* AnnotationOverlayWindow.swift */; };
 		BBF2208E21D2C42E5EF99CF7 /* PixelBufferHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8717F1ABD51943E2DE95523E /* PixelBufferHelper.swift */; };
+		C74D95CC2E74D17136112F71 /* RecordingLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5C3C861EA0CD2A6B706B26C /* RecordingLayout.swift */; };
 		CBD900145804796B0A308C98 /* RecordingConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E439F7D217C2B2CE423904C /* RecordingConfig.swift */; };
 		CBFE087ED8B205A5A0324FAA /* RecordingAssetWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1BE2D0E70056F255CD8C3D9 /* RecordingAssetWriter.swift */; };
 		D22132BD36DDE5905F59A878 /* AnnotationTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61B8013EEF9D987D69DBB7B7 /* AnnotationTool.swift */; };
@@ -35,6 +40,16 @@
 		F578175D88CF2C1A2DB37E4A /* CameraCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C09ACAB574645D8CE2DF1AB /* CameraCaptureService.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		9CADB31299926E1804368BB2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B20C8937083BC6F986B8328F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 54AC3D37153D22C7D3CF3027;
+			remoteInfo = RecordCourses;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		10EADA416C45BC40ECD4FDC9 /* AnnotationOverlayWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationOverlayWindow.swift; sourceTree = "<group>"; };
 		1B1469A9CF232254E48B709F /* FloatingToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingToolbar.swift; sourceTree = "<group>"; };
@@ -42,6 +57,7 @@
 		2DBDCE478B5FC1858CB1D75A /* RecordCourses.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RecordCourses.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3C4D1497B459F0491DD9596C /* RecordingError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingError.swift; sourceTree = "<group>"; };
 		3D34B2496E5B3A0A01914011 /* RecordingWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingWindow.swift; sourceTree = "<group>"; };
+		4216CFE12DC222740B8C745F /* ColorHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorHelper.swift; sourceTree = "<group>"; };
 		4C9564EFB23C5D673D15E981 /* RecordingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingViewModel.swift; sourceTree = "<group>"; };
 		54707D78CA5526D3B4C33C58 /* RecordingPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingPipeline.swift; sourceTree = "<group>"; };
 		55AAAD87FA294617FFB05A02 /* PermissionsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsManager.swift; sourceTree = "<group>"; };
@@ -58,12 +74,17 @@
 		A2411B514E99197181886AB7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		BB665822047BA7FB3860E357 /* RecordCourses.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RecordCourses.entitlements; sourceTree = "<group>"; };
 		BCA03F4AD419DCB04836E83F /* ScreenHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenHelper.swift; sourceTree = "<group>"; };
+		BDBB3687D4070D93BD906A47 /* RecordCoursesTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RecordCoursesTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		C3DA70AB1893550D20AAFEA5 /* RecordingLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingLayoutTests.swift; sourceTree = "<group>"; };
+		C476AB0A1A12B560DFFAC034 /* LayoutRegion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayoutRegion.swift; sourceTree = "<group>"; };
 		C6707CD53B931689314EA028 /* CaptureTarget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureTarget.swift; sourceTree = "<group>"; };
 		CA557ABBB570A512D5DC43A7 /* AudioCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCaptureService.swift; sourceTree = "<group>"; };
 		CAA3B2EABA638BF2E8A979F5 /* ScreenCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCaptureService.swift; sourceTree = "<group>"; };
 		CDB13214ACA9AC14C5B72175 /* VideoCompositor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoCompositor.swift; sourceTree = "<group>"; };
 		D1BE2D0E70056F255CD8C3D9 /* RecordingAssetWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingAssetWriter.swift; sourceTree = "<group>"; };
 		D95E47617BFEC6AFACE6450B /* DeviceHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceHelper.swift; sourceTree = "<group>"; };
+		EB98F3392AA14880B04CD4EE /* CameraLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraLayout.swift; sourceTree = "<group>"; };
+		F5C3C861EA0CD2A6B706B26C /* RecordingLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingLayout.swift; sourceTree = "<group>"; };
 		FB47BC2BA550D5D54E9D4F04 /* Stroke.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stroke.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -80,13 +101,25 @@
 			path = UI;
 			sourceTree = "<group>";
 		};
+		27FA6F6884BAD109EF95386D /* RecordCoursesTests */ = {
+			isa = PBXGroup;
+			children = (
+				C2AFAD9322F0CC1A8A69ED07 /* Core */,
+				7FAB6FB550F2930BB44C3B23 /* Models */,
+			);
+			path = RecordCoursesTests;
+			sourceTree = "<group>";
+		};
 		412F46CDD1AB9D9D68474762 /* Models */ = {
 			isa = PBXGroup;
 			children = (
 				61B8013EEF9D987D69DBB7B7 /* AnnotationTool.swift */,
+				EB98F3392AA14880B04CD4EE /* CameraLayout.swift */,
 				C6707CD53B931689314EA028 /* CaptureTarget.swift */,
+				C476AB0A1A12B560DFFAC034 /* LayoutRegion.swift */,
 				8E439F7D217C2B2CE423904C /* RecordingConfig.swift */,
 				3C4D1497B459F0491DD9596C /* RecordingError.swift */,
+				F5C3C861EA0CD2A6B706B26C /* RecordingLayout.swift */,
 				6D1FA3A4C79CAB1A9B99AD13 /* RecordingState.swift */,
 				FB47BC2BA550D5D54E9D4F04 /* Stroke.swift */,
 			);
@@ -96,6 +129,7 @@
 		42575253CEF048CD49F2EE1C /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
+				4216CFE12DC222740B8C745F /* ColorHelper.swift */,
 				D95E47617BFEC6AFACE6450B /* DeviceHelper.swift */,
 				8717F1ABD51943E2DE95523E /* PixelBufferHelper.swift */,
 				BCA03F4AD419DCB04836E83F /* ScreenHelper.swift */,
@@ -124,14 +158,24 @@
 			isa = PBXGroup;
 			children = (
 				2DBDCE478B5FC1858CB1D75A /* RecordCourses.app */,
+				BDBB3687D4070D93BD906A47 /* RecordCoursesTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		7FAB6FB550F2930BB44C3B23 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				C3DA70AB1893550D20AAFEA5 /* RecordingLayoutTests.swift */,
+			);
+			path = Models;
 			sourceTree = "<group>";
 		};
 		9E68C7B10C20C703531DEC7F = {
 			isa = PBXGroup;
 			children = (
 				4A39732F3C1715DF8FAB9DD5 /* RecordCourses */,
+				27FA6F6884BAD109EF95386D /* RecordCoursesTests */,
 				69E66EB7A08683936EE4AEC0 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -142,6 +186,13 @@
 				1C8B6BB6FB9631174188F452 /* RecordCoursesApp.swift */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		C2AFAD9322F0CC1A8A69ED07 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Core;
 			sourceTree = "<group>";
 		};
 		E608F8B1A9EFB9C8CC7C2D43 /* ViewModels */ = {
@@ -196,6 +247,24 @@
 			productReference = 2DBDCE478B5FC1858CB1D75A /* RecordCourses.app */;
 			productType = "com.apple.product-type.application";
 		};
+		A92E34D50E675B1375C94B0D /* RecordCoursesTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C264F9AB5104E27AABB6D692 /* Build configuration list for PBXNativeTarget "RecordCoursesTests" */;
+			buildPhases = (
+				BD304F5B0BF595AE13441503 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				DA0FF8D885F0ED9BE04E7020 /* PBXTargetDependency */,
+			);
+			name = RecordCoursesTests;
+			packageProductDependencies = (
+			);
+			productName = RecordCoursesTests;
+			productReference = BDBB3687D4070D93BD906A47 /* RecordCoursesTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -206,6 +275,9 @@
 				LastUpgradeCheck = 1400;
 				TargetAttributes = {
 					54AC3D37153D22C7D3CF3027 = {
+						DevelopmentTeam = "";
+					};
+					A92E34D50E675B1375C94B0D = {
 						DevelopmentTeam = "";
 					};
 				};
@@ -225,6 +297,7 @@
 			projectRoot = "";
 			targets = (
 				54AC3D37153D22C7D3CF3027 /* RecordCourses */,
+				A92E34D50E675B1375C94B0D /* RecordCoursesTests */,
 			);
 		};
 /* End PBXProject section */
@@ -251,9 +324,12 @@
 				5FEBBDFEC7E28458CEF9F4EB /* AnnotationToolbarView.swift in Sources */,
 				2C385CDB0B12AA45315AB413 /* AudioCaptureService.swift in Sources */,
 				F578175D88CF2C1A2DB37E4A /* CameraCaptureService.swift in Sources */,
+				0A82A7A98DDB3CD80B16DB1C /* CameraLayout.swift in Sources */,
 				A9471E9967A0DC5EF0D101AD /* CaptureTarget.swift in Sources */,
+				A831553602A5303E0AA25C1B /* ColorHelper.swift in Sources */,
 				D5AC661447EBAD8504824A23 /* DeviceHelper.swift in Sources */,
 				5949C6FC1B37BCC66D5E0EBF /* FloatingToolbar.swift in Sources */,
+				78CFDE82E1AA90830038479E /* LayoutRegion.swift in Sources */,
 				0B85CF3870CCFC9D2936A3DE /* PermissionsManager.swift in Sources */,
 				BBF2208E21D2C42E5EF99CF7 /* PixelBufferHelper.swift in Sources */,
 				1226FE95E596578848084687 /* PreviewView.swift in Sources */,
@@ -261,6 +337,7 @@
 				CBFE087ED8B205A5A0324FAA /* RecordingAssetWriter.swift in Sources */,
 				CBD900145804796B0A308C98 /* RecordingConfig.swift in Sources */,
 				8A65FE1FF8CB7E69A78DD7F2 /* RecordingError.swift in Sources */,
+				C74D95CC2E74D17136112F71 /* RecordingLayout.swift in Sources */,
 				02E215131A74576EE48A146C /* RecordingPipeline.swift in Sources */,
 				E068B3716947C890D71B288F /* RecordingState.swift in Sources */,
 				9A471AF586B5139C8BBFF0E0 /* RecordingViewModel.swift in Sources */,
@@ -273,9 +350,57 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BD304F5B0BF595AE13441503 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7B4D769F4B2A7FFC965D5D32 /* RecordingLayoutTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		DA0FF8D885F0ED9BE04E7020 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 54AC3D37153D22C7D3CF3027 /* RecordCourses */;
+			targetProxy = 9CADB31299926E1804368BB2 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		10DD69F4F0167D7290AFE986 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.recordcourses.RecordCoursesTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/RecordCourses.app/Contents/MacOS/RecordCourses";
+			};
+			name = Release;
+		};
+		288B94C2CE79CC0615EAD847 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.recordcourses.RecordCoursesTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/RecordCourses.app/Contents/MacOS/RecordCourses";
+			};
+			name = Debug;
+		};
 		3FAC2F598DFF050861B7CEE2 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -447,6 +572,15 @@
 			buildConfigurations = (
 				3FAC2F598DFF050861B7CEE2 /* Debug */,
 				D0A2F58842029BB41CA42A02 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C264F9AB5104E27AABB6D692 /* Build configuration list for PBXNativeTarget "RecordCoursesTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				288B94C2CE79CC0615EAD847 /* Debug */,
+				10DD69F4F0167D7290AFE986 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

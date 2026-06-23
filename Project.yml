@@ -35,3 +35,11 @@ targets:
         NSMicrophoneUsageDescription: "RecordCourses needs access to your microphone to record your voice."
         NSRequiresAquaSystemAppearance: false
     dependencies: []
+
+  RecordCoursesTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: RecordCoursesTests
+    dependencies:
+      - target: RecordCourses
