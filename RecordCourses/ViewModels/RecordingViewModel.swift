@@ -88,6 +88,13 @@ final class RecordingViewModel: ObservableObject {
 
     /// Load available displays and refresh permission state.
     func loadDisplays() async {
+        await checkPermissions()
+
+        guard hasScreenPermission else {
+            displays = []
+            return
+        }
+
         displays = await ScreenCaptureService.availableDisplays()
         if let savedID = config.selectedDisplayID,
            let display = displays.first(where: { $0.displayID == savedID }) {
@@ -96,17 +103,33 @@ final class RecordingViewModel: ObservableObject {
             selectedDisplayID = first.displayID
             config.selectedDisplayID = first.displayID
         }
-
-        await checkPermissions()
     }
 
     /// Check and request required permissions.
     func checkPermissions() async {
         await PermissionsManager.shared.checkAllPermissions()
+        updatePermissionState()
+    }
+
+    /// Request screen recording permission from a user action.
+    func requestScreenPermission() async {
+        await PermissionsManager.shared.requestScreenPermission()
+        updatePermissionState()
+        if hasScreenPermission {
+            await loadDisplays()
+        }
+    }
+
+    private func updatePermissionState() {
         let permissions = PermissionsManager.shared
         hasRequiredPermissions = permissions.hasScreenPermission
             && (!config.enableCamera || permissions.hasCameraPermission)
             && (!config.enableMicrophone || permissions.hasMicrophonePermission)
+    }
+
+    /// Whether the screen recording permission specifically is granted.
+    var hasScreenPermission: Bool {
+        PermissionsManager.shared.hasScreenPermission
     }
 
     /// Start recording.

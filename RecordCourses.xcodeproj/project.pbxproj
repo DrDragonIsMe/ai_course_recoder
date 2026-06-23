@@ -612,7 +612,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.shunzhiweilai.RecordCourses;
+				PRODUCT_BUNDLE_IDENTIFIER = com.qijiayoudao.RecordCourses;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = YES;
 				RUNTIME_EXCEPTION_ALLOW_JIT = YES;
@@ -649,7 +649,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.shunzhiweilai.RecordCourses;
+				PRODUCT_BUNDLE_IDENTIFIER = com.qijiayoudao.RecordCourses;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = YES;
 				RUNTIME_EXCEPTION_ALLOW_JIT = YES;

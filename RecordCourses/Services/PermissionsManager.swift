@@ -28,15 +28,17 @@ final class PermissionsManager {
     /// macOS invalidates the previously-granted TCC entry). Use Core Graphics'
     /// explicit preflight API instead, which reflects the real capture grant.
     func checkScreenPermission() async {
-        if CGPreflightScreenCaptureAccess() {
-            hasScreenPermission = true
-            return
-        }
-        // Not yet determined / denied. Requesting opens the system prompt and
-        // returns immediately if a decision was already made (user must toggle
-        // in System Settings to change an existing denial).
+        hasScreenPermission = CGPreflightScreenCaptureAccess()
+    }
+
+    /// Request screen recording permission. This should be called from a user
+    /// action (button click) because macOS may suppress the prompt when it is
+    /// triggered automatically at launch.
+    @discardableResult
+    func requestScreenPermission() async -> Bool {
         let granted = CGRequestScreenCaptureAccess()
         hasScreenPermission = granted
+        return granted
     }
 
     /// Check camera permission.

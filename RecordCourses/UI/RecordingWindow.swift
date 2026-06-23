@@ -107,9 +107,18 @@ struct RecordingWindow: View {
         HStack(spacing: 10) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundColor(.orange)
-            Text("Screen recording, camera, or microphone permission is missing. Open System Settings to grant access.")
+            Text(permissionBannerMessage)
                 .font(.caption)
             Spacer()
+            if !viewModel.hasScreenPermission {
+                Button("Grant Access") {
+                    Task {
+                        await viewModel.requestScreenPermission()
+                    }
+                }
+                .controlSize(.small)
+                .buttonStyle(.borderedProminent)
+            }
             Button("Open Settings") {
                 viewModel.openPrivacySettings()
             }
@@ -118,6 +127,16 @@ struct RecordingWindow: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
         .background(Color.orange.opacity(0.1))
+    }
+
+    private var permissionBannerMessage: String {
+        if !viewModel.hasScreenPermission {
+            return "Screen recording permission is required. Click Grant Access, then allow in the dialog."
+        }
+        if !viewModel.hasRequiredPermissions {
+            return "Camera or microphone permission is missing. Open System Settings to grant access."
+        }
+        return "Permission required."
     }
 
     // MARK: - Studio Body
@@ -195,7 +214,7 @@ struct RecordingWindow: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
-                .disabled(viewModel.state == .configuring)
+                .disabled(viewModel.state == .configuring || !viewModel.hasRequiredPermissions)
             }
         }
         .padding(.horizontal, 16)
