@@ -134,6 +134,11 @@ final class RecordingViewModel: ObservableObject {
 
     /// Start recording.
     func startRecording() async {
+        guard hasScreenPermission else {
+            errorMessage = RecordingError.screenCapturePermissionDenied.errorDescription
+            return
+        }
+
         config.selectedDisplayID = selectedDisplayID
         RecordingConfig.saved = config
 
