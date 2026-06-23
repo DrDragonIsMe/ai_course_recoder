@@ -54,6 +54,10 @@ final class RecordingViewModel: ObservableObject {
     private var durationTimer: Timer?
     private var floatingToolbar: FloatingToolbarWindow?
 
+    /// Reference to the main control window so we can hide it while recording.
+    private var mainWindow: NSWindow?
+    private var globalKeyMonitor: Any?
+
     init() {
         setupPipelineBindings()
     }
@@ -88,7 +92,10 @@ final class RecordingViewModel: ObservableObject {
         config.selectedDisplayID = selectedDisplayID
         RecordingConfig.saved = config
 
+        mainWindow = NSApp.mainWindow
         await pipeline.start(config: config)
+        // Hide the main control window while recording so it doesn't appear in the capture.
+        mainWindow?.orderOut(nil)
         // Show the toolbar after the overlay window is created so it stays on top.
         showFloatingToolbar()
     }
@@ -103,6 +110,9 @@ final class RecordingViewModel: ObservableObject {
     func stopRecording() async {
         await pipeline.stop()
         hideFloatingToolbar()
+        // Bring the main control window back.
+        mainWindow?.orderFrontRegardless()
+        mainWindow = nil
 
         if let outputURL = pipeline.outputURL {
             outputReadyMessage = "Saved to \(outputURL.lastPathComponent)"
@@ -117,11 +127,50 @@ final class RecordingViewModel: ObservableObject {
         let toolbar = FloatingToolbarWindow(viewModel: self)
         toolbar.orderFrontRegardless()
         floatingToolbar = toolbar
+        startGlobalKeyMonitor()
     }
 
     private func hideFloatingToolbar() {
         floatingToolbar?.orderOut(nil)
         floatingToolbar = nil
+        stopGlobalKeyMonitor()
+    }
+
+    // MARK: - Global Shortcuts
+
+    private func startGlobalKeyMonitor() {
+        stopGlobalKeyMonitor()
+        globalKeyMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            Task { @MainActor in
+                self?.handleGlobalKeyEvent(event)
+            }
+        }
+    }
+
+    private func stopGlobalKeyMonitor() {
+        if let monitor = globalKeyMonitor {
+            NSEvent.removeMonitor(monitor)
+            globalKeyMonitor = nil
+        }
+    }
+
+    private func handleGlobalKeyEvent(_ event: NSEvent) {
+        guard isRecording else { return }
+
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        let isCommand = flags.contains(.command)
+        let isShift = flags.contains(.shift)
+        let character = event.charactersIgnoringModifiers?.lowercased()
+
+        if isCommand && isShift && character == "a" {
+            toggleAnnotationDrawingMode()
+        }
+
+        if isCommand && isShift && character == "s" {
+            Task {
+                await stopRecording()
+            }
+        }
     }
 
     /// Open the app settings/preferences window.

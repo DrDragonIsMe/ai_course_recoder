@@ -33,7 +33,6 @@ final class RecordingAssetWriter {
             AVVideoCompressionPropertiesKey: [
                 AVVideoAverageBitRateKey: width * height * config.quality.bitrateMultiplier,
                 AVVideoMaxKeyFrameIntervalKey: config.fps * 2,
-                AVVideoQualityKey: 0.85,
             ] as [String: Any],
         ]
 

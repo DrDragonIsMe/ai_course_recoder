@@ -54,6 +54,11 @@ final class AnnotationOverlayWindow: NSWindow {
     func toggleDrawingMode() {
         isDrawingModeEnabled.toggle()
         ignoresMouseEvents = !isDrawingModeEnabled
+        // When drawing, keep the overlay just below the floating toolbar so toolbar buttons remain clickable.
+        // When not drawing, raise it above the toolbar but ignore mouse events so it never blocks interaction.
+        level = isDrawingModeEnabled
+            ? .screenSaver
+            : .init(rawValue: NSWindow.Level.screenSaver.rawValue + 1)
         // Bring overlay to front when entering drawing mode so it receives strokes.
         if isDrawingModeEnabled {
             orderFrontRegardless()
