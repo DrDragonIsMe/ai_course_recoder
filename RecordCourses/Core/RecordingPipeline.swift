@@ -56,12 +56,7 @@ final class RecordingPipeline: ObservableObject {
             assetWriter = writer
 
             // 4. Initialize video compositor
-            videoCompositor = VideoCompositor(
-                width: targetDisplay.width,
-                height: targetDisplay.height,
-                cameraPosition: config.cameraPosition,
-                cameraSize: config.cameraSize
-            )
+            videoCompositor = VideoCompositor(layout: config.layout)
 
             // 5. Initialize annotation session and overlay
             let annotationSession = AnnotationSession()

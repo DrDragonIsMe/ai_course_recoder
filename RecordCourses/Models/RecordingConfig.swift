@@ -23,6 +23,9 @@ struct RecordingConfig: Codable, Equatable {
     // Cursor
     var showCursor: Bool = true
 
+    // Layout
+    var layout: RecordingLayout = .cornerPIP()
+
     // Output
     var outputFormat: OutputFormat = .mov
     var outputDirectory: URL? = nil
@@ -30,7 +33,7 @@ struct RecordingConfig: Codable, Equatable {
     enum CodingKeys: String, CodingKey {
         case captureMode, selectedDisplayID, videoCodec, quality, fps
         case enableCamera, cameraPosition, cameraSize, enableMicrophone
-        case showCursor, outputFormat, outputDirectory
+        case showCursor, outputFormat, outputDirectory, layout
     }
 
     // MARK: - Nested Enums

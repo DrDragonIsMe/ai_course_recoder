@@ -4,36 +4,24 @@ import CoreVideo
 import CoreGraphics
 import AppKit
 
-/// Composites screen frames with webcam overlay and annotations.
+/// Composites screen frames with webcam overlay, annotations, and layout-driven overlays.
 final class VideoCompositor {
-    private let width: Int
-    private let height: Int
-    private let cameraPosition: RecordingConfig.CameraPosition
-    private let cameraSize: RecordingConfig.CameraSize
+    let layout: RecordingLayout
 
-    init(width: Int, height: Int, cameraPosition: RecordingConfig.CameraPosition, cameraSize: RecordingConfig.CameraSize) {
-        self.width = width
-        self.height = height
-        self.cameraPosition = cameraPosition
-        self.cameraSize = cameraSize
+    init(layout: RecordingLayout) {
+        self.layout = layout
     }
 
     /// Composite a screen frame with optional webcam overlay and annotation strokes.
     func composite(screenFrame: CVPixelBuffer, webcamFrame: CVPixelBuffer?, strokes: [Stroke]) -> CVPixelBuffer? {
-        let shouldCompositeCamera = webcamFrame != nil
-        let shouldCompositeAnnotations = !strokes.isEmpty
+        let containerSize = CGSize(
+            width: CVPixelBufferGetWidth(screenFrame),
+            height: CVPixelBufferGetHeight(screenFrame)
+        )
+        let containerRect = CGRect(origin: .zero, size: containerSize)
 
-        // Fast path: nothing to overlay.
-        if !shouldCompositeCamera && !shouldCompositeAnnotations {
-            return screenFrame
-        }
-
-        // Copy the screen frame into a writable buffer we can draw on.
-        guard let outputBuffer = PixelBufferHelper.copyPixelBuffer(screenFrame) else {
-            return screenFrame
-        }
-
-        guard let context = createBitmapContext(pixelBuffer: outputBuffer) else {
+        guard let outputBuffer = PixelBufferHelper.copyPixelBuffer(screenFrame),
+              let context = createBitmapContext(pixelBuffer: outputBuffer, size: containerSize) else {
             return screenFrame
         }
 
@@ -41,13 +29,22 @@ final class VideoCompositor {
         defer { CVPixelBufferUnlockBaseAddress(outputBuffer, []) }
 
         // Flip Core Graphics coordinate system to match screen coordinates.
-        let transform = CGAffineTransform(scaleX: 1, y: -1).translatedBy(x: 0, y: -CGFloat(height))
+        let transform = CGAffineTransform(scaleX: 1, y: -1).translatedBy(x: 0, y: -containerSize.height)
         context.concatenate(transform)
 
-        if let webcamFrame = webcamFrame {
-            drawWebcam(webcamFrame, in: context)
+        // Fill background.
+        context.setFillColor(layout.backgroundColor)
+        context.fill(containerRect)
+
+        // Draw screen content into its layout region.
+        drawScreenFrame(screenFrame, in: context, containerSize: containerSize)
+
+        // Draw webcam into camera region.
+        if let webcamFrame = webcamFrame, layout.cameraLayout.isVisible {
+            drawWebcam(webcamFrame, in: context, containerSize: containerSize)
         }
 
+        // Draw annotations.
         if !strokes.isEmpty {
             drawStrokes(strokes, in: context)
         }
@@ -55,91 +52,137 @@ final class VideoCompositor {
         return outputBuffer
     }
 
-    // MARK: - Camera Overlay
+    // MARK: - Screen
 
-    private func drawWebcam(_ webcamFrame: CVPixelBuffer, in context: CGContext) {
-        CVPixelBufferLockBaseAddress(webcamFrame, .readOnly)
-        defer { CVPixelBufferUnlockBaseAddress(webcamFrame, .readOnly) }
+    private func drawScreenFrame(_ screenFrame: CVPixelBuffer, in context: CGContext, containerSize: CGSize) {
+        guard let image = cgImage(from: screenFrame) else { return }
+        let rect = layout.screenRegion.rect(for: containerSize)
+        drawImage(image, in: rect, cornerRadius: layout.screenRegion.cornerRadius, context: context)
+    }
 
-        guard let webcamImage = cgImage(from: webcamFrame) else { return }
+    // MARK: - Webcam
 
-        let webcamRect = cameraRect(for: CGSize(width: width, height: height), webcamFrame: webcamFrame)
-
-        // Draw rounded rect clipping path for the camera feed.
-        let cornerRadius: CGFloat = min(webcamRect.width, webcamRect.height) * 0.08
-        let path = NSBezierPath(roundedRect: webcamRect, xRadius: cornerRadius, yRadius: cornerRadius)
+    private func drawWebcam(_ webcamFrame: CVPixelBuffer, in context: CGContext, containerSize: CGSize) {
+        guard let image = cgImage(from: webcamFrame) else { return }
+        let camera = layout.cameraLayout
+        let rect = camera.region.rect(for: containerSize)
 
         context.saveGState()
-        path.addClip()
-        context.draw(webcamImage, in: webcamRect)
 
-        // Subtle border.
-        context.setStrokeColor(NSColor.white.withAlphaComponent(0.8).cgColor)
-        context.setLineWidth(2)
-        context.stroke(webcamRect, width: 2)
+        if camera.region.cornerRadius > 0 {
+            let path = NSBezierPath(roundedRect: rect, xRadius: camera.region.cornerRadius, yRadius: camera.region.cornerRadius)
+            path.addClip()
+        }
+
+        if camera.shadowRadius > 0 {
+            context.setShadow(offset: CGSize(width: 0, height: -4), blur: camera.shadowRadius, color: NSColor.black.withAlphaComponent(0.4).cgColor)
+        }
+
+        context.draw(image, in: rect)
+
+        if camera.borderWidth > 0 {
+            context.setStrokeColor(camera.borderColor)
+            context.setLineWidth(camera.borderWidth)
+            if camera.region.cornerRadius > 0 {
+                let path = NSBezierPath(roundedRect: rect, xRadius: camera.region.cornerRadius, yRadius: camera.region.cornerRadius)
+                path.stroke()
+            } else {
+                context.stroke(rect)
+            }
+        }
 
         context.restoreGState()
     }
 
-    private func cameraRect(for containerSize: CGSize, webcamFrame: CVPixelBuffer) -> CGRect {
-        let webcamWidth = CVPixelBufferGetWidth(webcamFrame)
-        let webcamHeight = CVPixelBufferGetHeight(webcamFrame)
-        let aspectRatio = CGFloat(webcamWidth) / CGFloat(webcamHeight)
-        let maxShortSide = min(containerSize.width, containerSize.height) * cameraSize.aspectRatioMultiplier
-        var rect = CGRect.zero
-
-        if aspectRatio >= 1 {
-            rect.size.width = maxShortSide * aspectRatio
-            rect.size.height = maxShortSide
-        } else {
-            rect.size.width = maxShortSide
-            rect.size.height = maxShortSide / aspectRatio
-        }
-
-        let padding: CGFloat = 24
-        switch cameraPosition {
-        case .topLeft:
-            rect.origin = CGPoint(x: padding, y: containerSize.height - rect.height - padding)
-        case .topRight:
-            rect.origin = CGPoint(x: containerSize.width - rect.width - padding, y: containerSize.height - rect.height - padding)
-        case .bottomLeft:
-            rect.origin = CGPoint(x: padding, y: padding)
-        case .bottomRight:
-            rect.origin = CGPoint(x: containerSize.width - rect.width - padding, y: padding)
-        }
-
-        return rect
-    }
-
-    // MARK: - Annotation Overlay
+    // MARK: - Annotations
 
     private func drawStrokes(_ strokes: [Stroke], in context: CGContext) {
         for stroke in strokes {
-            context.saveGState()
-            context.setStrokeColor(stroke.color.cgColor)
-            context.setLineWidth(stroke.lineWidth)
-            context.setLineCap(.round)
-            context.setLineJoin(.round)
+            drawStroke(stroke, in: context)
+        }
+    }
 
-            let points = stroke.points
-            guard points.count > 1 else {
-                context.restoreGState()
-                continue
-            }
+    private func drawStroke(_ stroke: Stroke, in context: CGContext) {
+        let points = stroke.points
+        guard points.count > 1 else { return }
 
+        context.saveGState()
+        context.setStrokeColor(stroke.color.cgColor)
+        context.setLineWidth(stroke.lineWidth)
+        context.setLineCap(.round)
+        context.setLineJoin(.round)
+
+        switch stroke.tool {
+        case .pen, .eraser:
             context.beginPath()
             context.move(to: CGPoint(x: points[0].x, y: points[0].y))
             for point in points.dropFirst() {
                 context.addLine(to: CGPoint(x: point.x, y: point.y))
             }
+            if stroke.tool == .eraser {
+                context.setBlendMode(.clear)
+            }
             context.strokePath()
-            context.restoreGState()
+
+        case .arrow:
+            drawArrow(points: points, in: context)
+
+        case .rectangle:
+            guard let first = points.first, let last = points.last else { break }
+            let rect = CGRect(origin: first, size: CGSize(width: last.x - first.x, height: last.y - first.y))
+            context.stroke(rect)
+
+        case .circle:
+            guard let first = points.first, let last = points.last else { break }
+            let rect = CGRect(origin: first, size: CGSize(width: last.x - first.x, height: last.y - first.y))
+            context.strokeEllipse(in: rect)
+
+        case .text, .cursorHighlight:
+            break
         }
+
+        context.restoreGState()
+    }
+
+    private func drawArrow(points: [NSPoint], in context: CGContext) {
+        guard let start = points.first, let end = points.last, start != end else { return }
+
+        context.beginPath()
+        context.move(to: CGPoint(x: start.x, y: start.y))
+        context.addLine(to: CGPoint(x: end.x, y: end.y))
+        context.strokePath()
+
+        let arrowLength: CGFloat = 15
+        let arrowAngle: CGFloat = .pi / 6
+        let angle = atan2(end.y - start.y, end.x - start.x)
+
+        context.beginPath()
+        context.move(to: CGPoint(x: end.x, y: end.y))
+        context.addLine(to: CGPoint(
+            x: end.x - arrowLength * cos(angle - arrowAngle),
+            y: end.y - arrowLength * sin(angle - arrowAngle)
+        ))
+        context.move(to: CGPoint(x: end.x, y: end.y))
+        context.addLine(to: CGPoint(
+            x: end.x - arrowLength * cos(angle + arrowAngle),
+            y: end.y - arrowLength * sin(angle + arrowAngle)
+        ))
+        context.strokePath()
     }
 
     // MARK: - Helpers
 
-    private func createBitmapContext(pixelBuffer: CVPixelBuffer) -> CGContext? {
+    private func drawImage(_ image: CGImage, in rect: CGRect, cornerRadius: CGFloat, context: CGContext) {
+        context.saveGState()
+        if cornerRadius > 0 {
+            let path = NSBezierPath(roundedRect: rect, xRadius: cornerRadius, yRadius: cornerRadius)
+            path.addClip()
+        }
+        context.draw(image, in: rect)
+        context.restoreGState()
+    }
+
+    private func createBitmapContext(pixelBuffer: CVPixelBuffer, size: CGSize) -> CGContext? {
         guard let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer) else { return nil }
 
         let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
@@ -148,8 +191,8 @@ final class VideoCompositor {
 
         return CGContext(
             data: baseAddress,
-            width: width,
-            height: height,
+            width: Int(size.width),
+            height: Int(size.height),
             bitsPerComponent: 8,
             bytesPerRow: bytesPerRow,
             space: colorSpace,
