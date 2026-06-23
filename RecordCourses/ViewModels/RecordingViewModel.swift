@@ -50,6 +50,26 @@ final class RecordingViewModel: ObservableObject {
     /// Whether all required permissions are granted.
     @Published var hasRequiredPermissions: Bool = false
 
+    // MARK: - Studio Layout State
+
+    /// Whether the left slide-deck panel is visible.
+    @Published var showSlidesPanel: Bool = true
+
+    /// Whether the right inspector panel is visible.
+    @Published var showInspectorPanel: Bool = true
+
+    /// Whether the bottom timeline / clip strip is visible.
+    @Published var showTimelinePanel: Bool = true
+
+    /// Slide deck used for PPT / scene planning.
+    @Published var slides: [SlideItem] = []
+
+    /// Currently selected slide in the deck.
+    @Published var selectedSlideID: UUID?
+
+    /// Recently exported recordings shown in the timeline strip.
+    @Published var recentRecordings: [URL] = []
+
     private let pipeline = RecordingPipeline()
     private var durationTimer: Timer?
     private var floatingToolbar: FloatingToolbarWindow?
@@ -60,6 +80,8 @@ final class RecordingViewModel: ObservableObject {
 
     init() {
         setupPipelineBindings()
+        loadDefaultSlides()
+        refreshRecentRecordings()
     }
 
     // MARK: - Actions
@@ -120,6 +142,7 @@ final class RecordingViewModel: ObservableObject {
             let containingDir = outputURL.deletingLastPathComponent()
             NSWorkspace.shared.open(containingDir)
         }
+        refreshRecentRecordings()
     }
 
     private func showFloatingToolbar() {
@@ -166,6 +189,11 @@ final class RecordingViewModel: ObservableObject {
             toggleAnnotationDrawingMode()
         }
 
+        // D: quick toggle annotation drawing mode (no modifiers).
+        if !isCommand && !isShift && character == "d" {
+            toggleAnnotationDrawingMode()
+        }
+
         if isCommand && isShift && character == "s" {
             Task {
                 await stopRecording()
@@ -193,6 +221,68 @@ final class RecordingViewModel: ObservableObject {
     /// Open privacy settings to grant screen recording permission.
     func openPrivacySettings() {
         PermissionsManager.shared.openPrivacySettings()
+    }
+
+    // MARK: - Studio / Slide Deck
+
+    private func loadDefaultSlides() {
+        slides = [
+            SlideItem(title: "Opening", pageNumber: 1),
+            SlideItem(title: "Introduction", pageNumber: 2),
+            SlideItem(title: "Main Content", pageNumber: 3),
+            SlideItem(title: "Demo", pageNumber: 4),
+            SlideItem(title: "Summary", pageNumber: 5)
+        ]
+        selectedSlideID = slides.first?.id
+    }
+
+    /// Add a new slide after the current selection, or at the end.
+    func addSlide() {
+        let nextNumber = (slides.last?.pageNumber ?? 0) + 1
+        let newSlide = SlideItem(title: "Slide \(nextNumber)", pageNumber: nextNumber)
+        slides.append(newSlide)
+        selectedSlideID = newSlide.id
+    }
+
+    /// Remove a slide from the deck.
+    func removeSlide(id: UUID) {
+        slides.removeAll { $0.id == id }
+        if selectedSlideID == id {
+            selectedSlideID = slides.first?.id
+        }
+    }
+
+    /// Select a slide.
+    func selectSlide(id: UUID) {
+        selectedSlideID = id
+    }
+
+    /// Open the output folder in Finder.
+    func openOutputFolder() {
+        let directory = config.outputDirectory
+            ?? FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first!
+        NSWorkspace.shared.open(directory)
+    }
+
+    /// Refresh the list of recent recordings in the output directory.
+    func refreshRecentRecordings() {
+        let directory = config.outputDirectory
+            ?? FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first!
+        guard let urls = try? FileManager.default.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: [.creationDateKey, .fileSizeKey],
+            options: .skipsHiddenFiles
+        ) else {
+            recentRecordings = []
+            return
+        }
+        recentRecordings = urls
+            .filter { ["mov", "mp4"].contains($0.pathExtension.lowercased()) }
+            .sorted { lhs, rhs in
+                let lhsDate = (try? lhs.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? .distantPast
+                let rhsDate = (try? rhs.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? .distantPast
+                return lhsDate > rhsDate
+            }
     }
 
     // MARK: - Setup

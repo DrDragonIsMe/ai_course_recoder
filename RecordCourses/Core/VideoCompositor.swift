@@ -31,6 +31,7 @@ final class VideoCompositor {
 
         guard let outputBuffer = PixelBufferHelper.copyPixelBuffer(screenFrame),
               let context = createBitmapContext(pixelBuffer: outputBuffer, size: containerSize) else {
+            // Return the original frame if we can't create a composite
             return screenFrame
         }
 
@@ -83,7 +84,10 @@ final class VideoCompositor {
     // MARK: - Screen
 
     private func drawScreenFrame(_ screenFrame: CVPixelBuffer, in context: CGContext, containerSize: CGSize) {
-        guard let image = cgImage(from: screenFrame) else { return }
+        guard let image = cgImage(from: screenFrame) else {
+            // If we can't get the image, return early
+            return
+        }
         let rect = layout.screenRegion.rect(for: containerSize)
         drawImage(image, in: rect, cornerRadius: layout.screenRegion.cornerRadius, context: context)
     }
@@ -91,7 +95,10 @@ final class VideoCompositor {
     // MARK: - Webcam
 
     private func drawWebcam(_ webcamFrame: CVPixelBuffer, in context: CGContext, containerSize: CGSize) {
-        guard let image = cgImage(from: webcamFrame) else { return }
+        guard let image = cgImage(from: webcamFrame) else {
+            // If we can't get the image, return early
+            return
+        }
         let camera = layout.cameraLayout
         let rect = camera.region.rect(for: containerSize)
 

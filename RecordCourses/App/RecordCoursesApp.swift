@@ -11,7 +11,10 @@ struct RecordCoursesApp: App {
                 .environmentObject(recordingViewModel)
         }
         .windowStyle(.hiddenTitleBar)
-        .defaultSize(width: 800, height: 600)
+        .defaultSize(width: 1200, height: 800)
+        .commands {
+            AppMenuCommands(viewModel: recordingViewModel)
+        }
 
         Settings {
             SettingsPanel()

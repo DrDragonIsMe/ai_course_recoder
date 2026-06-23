@@ -22,7 +22,7 @@
 
 ## 系统要求
 
-- macOS 13.0+
+- macOS 14.0+
 - Apple Silicon 或 Intel Mac
 - Xcode 16+（开发/构建）
 

@@ -21,13 +21,22 @@ final class PermissionsManager {
     }
 
     /// Check screen recording permission.
+    ///
+    /// `SCShareableContent` is an unreliable probe: it can return a display list
+    /// even when the actual frame-capture permission is denied or stale (common
+    /// with adhoc-signed debug builds whose signature changes on every rebuild —
+    /// macOS invalidates the previously-granted TCC entry). Use Core Graphics'
+    /// explicit preflight API instead, which reflects the real capture grant.
     func checkScreenPermission() async {
-        do {
-            let displays = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true).displays
-            hasScreenPermission = !displays.isEmpty
-        } catch {
-            hasScreenPermission = false
+        if CGPreflightScreenCaptureAccess() {
+            hasScreenPermission = true
+            return
         }
+        // Not yet determined / denied. Requesting opens the system prompt and
+        // returns immediately if a decision was already made (user must toggle
+        // in System Settings to change an existing denial).
+        let granted = CGRequestScreenCaptureAccess()
+        hasScreenPermission = granted
     }
 
     /// Check camera permission.

@@ -3,10 +3,13 @@ import ScreenCaptureKit
 import AVFoundation
 import AppKit
 import Combine
+import os.log
 
 /// Orchestrates the full recording lifecycle: screen + camera + audio → file.
 @MainActor
 final class RecordingPipeline: ObservableObject {
+    private static let logger = Logger(subsystem: "com.recordcourses", category: "RecordingPipeline")
+
     @Published var state: RecordingState = .idle
     @Published var duration: TimeInterval = 0
     @Published var error: RecordingError?
@@ -40,6 +43,9 @@ final class RecordingPipeline: ObservableObject {
     private var recentKeys: [String] = []
     private var currentSubtitle: (primary: String, secondary: String?) = ("", nil)
     private var recordingProgress: CGFloat = 0
+    private var frameCount = 0
+    private var audioCount = 0
+    private var firstFrameWatchdog: Task<Void, Never>?
 
     // MARK: - Public
 
@@ -85,26 +91,38 @@ final class RecordingPipeline: ObservableObject {
             var audioFormatDescription: CMFormatDescription?
             if config.enableMicrophone {
                 let audioCap = AudioCaptureService()
-                try await audioCap.start()
-                audioFormatDescription = audioCap.audioFormatDescription
-                audioCap.onAudioSample = { [weak self] sampleBuffer in
-                    Task { @MainActor in
-                        self?.handleAudioSample(sampleBuffer)
+                do {
+                    try await audioCap.start()
+                    audioFormatDescription = audioCap.audioFormatDescription
+                    audioCap.onAudioSample = { [weak self] sampleBuffer in
+                        Task { @MainActor in
+                            self?.handleAudioSample(sampleBuffer)
+                        }
                     }
+                    audioCapture = audioCap
+                } catch {
+                    // If we can't start audio capture, continue without audio
+                    Self.logger.warning("Failed to start audio capture: \(error.localizedDescription)")
+                    // Continue with recording but without audio
                 }
-                audioCapture = audioCap
             }
 
             // 7. Initialize asset writer (after camera/audio so audio format is known)
             let writer = RecordingAssetWriter()
-            try writer.start(
-                url: outputURL,
-                width: targetDisplay.width,
-                height: targetDisplay.height,
-                config: config,
-                audioFormatDescription: audioFormatDescription
-            )
-            assetWriter = writer
+            do {
+                try writer.start(
+                    url: outputURL,
+                    width: targetDisplay.width,
+                    height: targetDisplay.height,
+                    config: config,
+                    audioFormatDescription: audioFormatDescription
+                )
+                assetWriter = writer
+            } catch {
+                // If we can't initialize the writer, throw an appropriate error
+                Self.logger.error("Failed to initialize asset writer: \(error.localizedDescription)")
+                throw RecordingError.writerFailed(error)
+            }
 
             // 8. Start screen capture
             let screenCap = ScreenCaptureService()
@@ -126,6 +144,15 @@ final class RecordingPipeline: ObservableObject {
             state = .recording
             self.outputURL = outputURL
 
+            // Watchdog: if no video frame arrives within a few seconds of
+            // recording start, the screen-capture permission is almost certainly
+            // denied or stale (common with adhoc-signed debug builds — macOS
+            // invalidates the TCC grant when the signature changes on rebuild).
+            // SCStream.startCapture() returns OK in that state but never calls
+            // didOutput, so without this check we'd silently record an empty
+            // video and drop all audio forever. Surface a clear error instead.
+            startFirstFrameWatchdog()
+
         } catch let recordingError as RecordingError {
             error = recordingError
             state = .idle
@@ -143,6 +170,10 @@ final class RecordingPipeline: ObservableObject {
     /// Stop recording.
     func stop() async {
         state = .stopping
+
+        // Cancel the first-frame watchdog if still pending.
+        firstFrameWatchdog?.cancel()
+        firstFrameWatchdog = nil
 
         // Stop all captures
         screenCapture?.stop()
@@ -190,7 +221,25 @@ final class RecordingPipeline: ObservableObject {
 
     private func handleScreenFrame(_ sampleBuffer: CMSampleBuffer, timestamp: CMTime) {
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer),
-              let assetWriter else { return }
+              let assetWriter else {
+            NSLog("Pipeline handleScreenFrame early return (no pixelBuffer or writer)")
+            return
+        }
+
+        frameCount += 1
+        if frameCount == 1 {
+            // First real video frame arrived — capture permission is working.
+            // Cancel the watchdog that would otherwise flag a silent failure.
+            firstFrameWatchdog?.cancel()
+            firstFrameWatchdog = nil
+            Self.logger.info("First video frame received at frame #1")
+        }
+        if frameCount == 1 || frameCount % 30 == 0 {
+            let width = CVPixelBufferGetWidth(pixelBuffer)
+            let height = CVPixelBufferGetHeight(pixelBuffer)
+            let statusRaw = assetWriter.status.rawValue
+            NSLog("Pipeline frame #%d %dx%d writerStatus=%ld", frameCount, width, height, statusRaw)
+        }
 
         let compositedFrame: CVPixelBuffer
         if let compositor = videoCompositor {
@@ -213,18 +262,32 @@ final class RecordingPipeline: ObservableObject {
             ) {
                 compositedFrame = frame
             } else {
+                NSLog("Pipeline compositor returned nil at frame #%d", frameCount)
                 compositedFrame = pixelBuffer
             }
         } else {
             compositedFrame = pixelBuffer
         }
 
-        assetWriter.appendVideoFrame(compositedFrame, timestamp: timestamp)
+        if !assetWriter.appendVideoFrame(compositedFrame, timestamp: timestamp) {
+            NSLog("Pipeline appendVideoFrame failed at frame #%d", frameCount)
+        }
     }
 
     private func handleAudioSample(_ sampleBuffer: CMSampleBuffer) {
-        guard let assetWriter else { return }
-        assetWriter.appendAudioSample(sampleBuffer)
+        guard let assetWriter else {
+            NSLog("Pipeline handleAudioSample early return (no writer)")
+            return
+        }
+
+        audioCount += 1
+        if audioCount == 1 || audioCount % 50 == 0 {
+            NSLog("Pipeline audio #%d writerStatus=%ld", audioCount, assetWriter.status.rawValue)
+        }
+
+        if !assetWriter.appendAudioSample(sampleBuffer) {
+            NSLog("Pipeline appendAudioSample failed at audio #%d", audioCount)
+        }
     }
 
     private func updateSubtitle(for elapsed: TimeInterval) {
@@ -252,6 +315,33 @@ final class RecordingPipeline: ObservableObject {
         return directory.appendingPathComponent(fileName)
     }
 
+    /// Watchdog: if no video frame arrives within the grace period, treat the
+    /// screen-capture permission as denied/stale and stop with a clear error.
+    private func startFirstFrameWatchdog() {
+        firstFrameWatchdog?.cancel()
+        let grace: UInt64 = 4_000_000_000 // 4 seconds
+        firstFrameWatchdog = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: grace)
+            guard let self, !Task.isCancelled else { return }
+            guard self.frameCount == 0 else { return }
+            Self.logger.error("No video frames within grace period — screen capture permission is denied or stale")
+            self.error = .screenCapturePermissionDenied
+            self.state = .idle
+            // Tear down the partial recording so the UI resets cleanly.
+            self.screenCapture?.stop()
+            self.audioCapture?.stop()
+            self.cameraCapture?.stop()
+            self.cursorTracker?.stop()
+            self.cursorTracker = nil
+            self.keyPressMonitor?.stop()
+            self.keyPressMonitor = nil
+            self.cancellables.removeAll()
+            self.timer?.invalidate()
+            self.timer = nil
+            self.firstFrameWatchdog = nil
+        }
+    }
+
     private func startOverlayTrackers() {
         let tracker = CursorTracker()
         tracker.start()
@@ -277,8 +367,10 @@ final class RecordingPipeline: ObservableObject {
     private func startTimer() {
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
-            if let start = self.startTime {
-                self.duration = Date().timeIntervalSince(start)
+            Task { @MainActor in
+                if let start = self.startTime {
+                    self.duration = Date().timeIntervalSince(start)
+                }
             }
         }
     }

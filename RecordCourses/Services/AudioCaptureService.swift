@@ -5,6 +5,7 @@ import AVFoundation
 final class AudioCaptureService: NSObject {
     private let session = AVCaptureSession()
     private let sessionQueue = DispatchQueue(label: "com.recordcourses.audio")
+    private var sampleCount = 0
 
     /// Callback for each captured audio sample buffer.
     var onAudioSample: ((CMSampleBuffer) -> Void)?
@@ -15,7 +16,7 @@ final class AudioCaptureService: NSObject {
     /// Discover available microphones.
     static func availableMicrophones() -> [AVCaptureDevice] {
         let discovery = AVCaptureDevice.DiscoverySession(
-            deviceTypes: [.builtInMicrophone],
+            deviceTypes: [.microphone],
             mediaType: .audio,
             position: .unspecified
         )
@@ -58,6 +59,11 @@ final class AudioCaptureService: NSObject {
 // MARK: - AVCaptureAudioDataOutputSampleBufferDelegate
 extension AudioCaptureService: AVCaptureAudioDataOutputSampleBufferDelegate {
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        sampleCount += 1
+        if sampleCount == 1 || sampleCount % 50 == 0 {
+            let timestamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+            NSLog("AudioCaptureService sample #%d ts=%lld", sampleCount, timestamp.value)
+        }
         onAudioSample?(sampleBuffer)
     }
 
