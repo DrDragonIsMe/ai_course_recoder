@@ -5,7 +5,7 @@ import os.log
 
 /// Wraps ScreenCaptureKit to capture the screen and deliver frames.
 final class ScreenCaptureService: NSObject {
-    private static let logger = Logger(subsystem: "com.recordcourses", category: "ScreenCaptureService")
+    private static let logger = Logger(subsystem: "com.qijiayoudao.RecordCourses", category: "ScreenCaptureService")
     private var stream: SCStream?
     private let queue = DispatchQueue(label: "com.recordcourses.screencapture")
     private var frameCount = 0

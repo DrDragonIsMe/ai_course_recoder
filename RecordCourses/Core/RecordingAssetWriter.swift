@@ -4,7 +4,7 @@ import os.log
 
 /// Wraps AVAssetWriter to write video and audio to disk in real time.
 final class RecordingAssetWriter {
-    private static let logger = Logger(subsystem: "com.recordcourses", category: "RecordingAssetWriter")
+    private static let logger = Logger(subsystem: "com.qijiayoudao.RecordCourses", category: "RecordingAssetWriter")
     private var writer: AVAssetWriter?
     private var videoInput: AVAssetWriterInput?
     private var videoAdaptor: AVAssetWriterInputPixelBufferAdaptor?

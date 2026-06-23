@@ -8,7 +8,7 @@ import os.log
 /// Orchestrates the full recording lifecycle: screen + camera + audio → file.
 @MainActor
 final class RecordingPipeline: ObservableObject {
-    private static let logger = Logger(subsystem: "com.recordcourses", category: "RecordingPipeline")
+    private static let logger = Logger(subsystem: "com.qijiayoudao.RecordCourses", category: "RecordingPipeline")
 
     @Published var state: RecordingState = .idle
     @Published var duration: TimeInterval = 0
