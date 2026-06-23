@@ -20,6 +20,7 @@ struct RecordingWindow: View {
             ScrollView {
                 VStack(spacing: 24) {
                     captureModeSection
+                    layoutSection
                     displaySection
                     videoSettingsSection
                     audioSettingsSection
@@ -343,6 +344,28 @@ struct RecordingWindow: View {
         }
     }
 
+    // MARK: - Layout Selection
+
+    private var layoutSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Layout", systemImage: "rectangle.split.2x1")
+                .font(.headline)
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                ForEach(RecordingLayout.allPresets, id: \.name) { layout in
+                    LayoutPresetCard(layout: layout, isSelected: viewModel.config.layout.name == layout.name) {
+                        viewModel.config.layout = layout
+                        // Disable camera if layout has no camera, enable if it does.
+                        viewModel.config.enableCamera = layout.cameraLayout.isVisible
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(Color(NSColor.controlBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
     // MARK: - Helpers
 
     private struct DisplayOption: Identifiable {
@@ -406,6 +429,70 @@ struct RecordingWindow: View {
         }
         .padding(20)
         .background(Color(NSColor.controlBackgroundColor))
+    }
+}
+
+// MARK: - Layout Preset Card
+
+struct LayoutPresetCard: View {
+    let layout: RecordingLayout
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                layoutPreview
+                Text(layout.name)
+                    .font(.caption)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 100)
+            .background(isSelected ? Color.accentColor.opacity(0.1) : Color(NSColor.controlBackgroundColor))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var layoutPreview: some View {
+        GeometryReader { geometry in
+            ZStack {
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.gray.opacity(0.3))
+
+                if layout.cameraLayout.isVisible {
+                    let cameraRect = previewRect(for: layout.cameraLayout.region, in: geometry.size)
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.blue.opacity(0.6))
+                        .frame(width: cameraRect.width, height: cameraRect.height)
+                        .position(x: cameraRect.midX, y: cameraRect.midY)
+                }
+
+                let screenRect = previewRect(for: layout.screenRegion, in: geometry.size)
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.green.opacity(0.4))
+                    .frame(width: screenRect.width, height: screenRect.height)
+                    .position(x: screenRect.midX, y: screenRect.midY)
+            }
+            .padding(8)
+        }
+    }
+
+    private func previewRect(for region: LayoutRegion, in containerSize: CGSize) -> CGRect {
+        let rect = region.rect(for: containerSize)
+        // Normalize to the preview's padded coordinate space.
+        let padded = CGRect(x: 8, y: 8, width: containerSize.width - 16, height: containerSize.height - 16)
+        return CGRect(
+            x: padded.minX + rect.minX / containerSize.width * padded.width,
+            y: padded.minY + rect.minY / containerSize.height * padded.height,
+            width: rect.width / containerSize.width * padded.width,
+            height: rect.height / containerSize.height * padded.height
+        )
     }
 }
 
