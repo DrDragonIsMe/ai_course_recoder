@@ -190,7 +190,7 @@ struct RecordingWindow: View {
 
     private var videoSettingsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label("Video", systemImage: "camera.video")
+            Label("Video", systemImage: "video.fill")
                 .font(.headline)
 
             HStack(spacing: 20) {

@@ -1,6 +1,6 @@
 import Foundation
 
-struct SubtitleEntry {
+struct SubtitleEntry: Codable, Equatable {
     let index: Int
     let start: TimeInterval
     let end: TimeInterval
@@ -24,6 +24,19 @@ enum SubtitleLoader {
         }
 
         return entries
+    }
+
+    /// Returns the subtitle that should be visible at the given elapsed time.
+    static func subtitle(for elapsed: TimeInterval, entries: [SubtitleEntry], bilingual: Bool = false) -> (primary: String, secondary: String?) {
+        guard let entry = entries.first(where: { elapsed >= $0.start && elapsed < $0.end }) else {
+            return ("", nil)
+        }
+        if bilingual, let separator = entry.text.range(of: "\n") {
+            let primary = String(entry.text[..<separator.lowerBound])
+            let secondary = String(entry.text[separator.upperBound...])
+            return (primary, secondary)
+        }
+        return (entry.text, nil)
     }
 
     private static func parseTimeRange(_ line: String) -> (TimeInterval, TimeInterval)? {

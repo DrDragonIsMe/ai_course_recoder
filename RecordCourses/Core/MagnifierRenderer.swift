@@ -5,14 +5,16 @@ import AppKit
 struct MagnifierRenderer: OverlayRenderer {
     let config: MagnifierConfig
     let sourceImage: CGImage?
+    let cursorPosition: CGPoint?
 
     func draw(in rect: CGRect, context: CGContext) {
         guard config.isEnabled, let sourceImage = sourceImage else { return }
         guard let borderColor = NSColor(hex: config.borderColorHex)?.cgColor else { return }
 
+        let center = cursorPosition ?? config.targetPoint
         let lensRect = CGRect(
-            x: config.targetPoint.x - config.radius,
-            y: config.targetPoint.y - config.radius,
+            x: center.x - config.radius,
+            y: center.y - config.radius,
             width: config.radius * 2,
             height: config.radius * 2
         )
@@ -22,8 +24,8 @@ struct MagnifierRenderer: OverlayRenderer {
         path.addClip()
 
         let cropRect = CGRect(
-            x: config.targetPoint.x - config.radius / config.scale,
-            y: config.targetPoint.y - config.radius / config.scale,
+            x: center.x - config.radius / config.scale,
+            y: center.y - config.radius / config.scale,
             width: config.radius * 2 / config.scale,
             height: config.radius * 2 / config.scale
         )

@@ -37,6 +37,13 @@ final class VideoCompositor {
         CVPixelBufferLockBaseAddress(outputBuffer, [])
         defer { CVPixelBufferUnlockBaseAddress(outputBuffer, []) }
 
+        // Make this bitmap context current so NSBezierPath-based clips/strokes
+        // apply to it rather than to a nil current graphics context.
+        let nsContext = NSGraphicsContext(cgContext: context, flipped: false)
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = nsContext
+        defer { NSGraphicsContext.restoreGraphicsState() }
+
         // Flip Core Graphics coordinate system to match screen coordinates.
         let transform = CGAffineTransform(scaleX: 1, y: -1).translatedBy(x: 0, y: -containerSize.height)
         context.concatenate(transform)
@@ -217,7 +224,7 @@ final class VideoCompositor {
         KeyPressRenderer(config: layout.keyPressOverlay, recentKeys: recentKeys)
             .draw(in: containerRect, context: context)
 
-        MagnifierRenderer(config: layout.magnifier, sourceImage: sourceImage)
+        MagnifierRenderer(config: layout.magnifier, sourceImage: sourceImage, cursorPosition: cursorPosition)
             .draw(in: containerRect, context: context)
 
         SubtitleRenderer(config: layout.subtitle, primary: subtitle.primary, secondary: subtitle.secondary)

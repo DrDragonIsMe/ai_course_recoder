@@ -187,7 +187,9 @@ final class RecordingPipeline: ObservableObject {
             let webcamFrame = cameraCapture?.latestFrame().flatMap { CMSampleBufferGetImageBuffer($0) }
             let strokes = annotationSession?.strokes ?? []
             if let start = startTime {
-                recordingProgress = CGFloat(min(Date().timeIntervalSince(start) / 60.0, 1.0))
+                let elapsed = Date().timeIntervalSince(start)
+                recordingProgress = CGFloat(min(elapsed / 60.0, 1.0))
+                updateSubtitle(for: elapsed)
             }
             if let frame = compositor.composite(
                 screenFrame: pixelBuffer,
@@ -213,6 +215,18 @@ final class RecordingPipeline: ObservableObject {
     private func handleAudioSample(_ sampleBuffer: CMSampleBuffer) {
         guard let assetWriter else { return }
         assetWriter.appendAudioSample(sampleBuffer)
+    }
+
+    private func updateSubtitle(for elapsed: TimeInterval) {
+        guard config.layout.subtitle.isEnabled else {
+            currentSubtitle = ("", nil)
+            return
+        }
+        currentSubtitle = SubtitleLoader.subtitle(
+            for: elapsed,
+            entries: config.layout.subtitle.entries,
+            bilingual: config.layout.subtitle.bilingual
+        )
     }
 
     // MARK: - Helpers

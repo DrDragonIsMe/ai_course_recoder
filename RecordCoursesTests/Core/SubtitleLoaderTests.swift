@@ -37,4 +37,29 @@ struct SubtitleLoaderTests {
         #expect(entries.count == 1)
         #expect(entries[0].text == "Valid")
     }
+
+    @Test("Subtitle selector returns active entry")
+    func subtitleSelectorReturnsActiveEntry() {
+        let entries = [
+            SubtitleEntry(index: 1, start: 1, end: 3, text: "Hello"),
+            SubtitleEntry(index: 2, start: 4, end: 6, text: "World")
+        ]
+        #expect(SubtitleLoader.subtitle(for: 2, entries: entries).primary == "Hello")
+        #expect(SubtitleLoader.subtitle(for: 5, entries: entries).primary == "World")
+    }
+
+    @Test("Subtitle selector returns empty outside ranges")
+    func subtitleSelectorReturnsEmptyOutsideRanges() {
+        let entries = [SubtitleEntry(index: 1, start: 1, end: 3, text: "Hello")]
+        #expect(SubtitleLoader.subtitle(for: 0, entries: entries).primary.isEmpty)
+        #expect(SubtitleLoader.subtitle(for: 3, entries: entries).primary.isEmpty)
+    }
+
+    @Test("Subtitle selector splits bilingual text")
+    func subtitleSelectorSplitsBilingualText() {
+        let entries = [SubtitleEntry(index: 1, start: 0, end: 2, text: "Hello\nBonjour")]
+        let result = SubtitleLoader.subtitle(for: 1, entries: entries, bilingual: true)
+        #expect(result.primary == "Hello")
+        #expect(result.secondary == "Bonjour")
+    }
 }

@@ -17,7 +17,7 @@ struct KeyPressRenderer: OverlayRenderer {
         var x = config.position == .bottomLeft ? padding : rect.width - padding
         let y = padding
 
-        for key in recentKeys.reversed() {
+        for key in recentKeys.suffix(config.maxKeys).reversed() {
             let text = key as NSString
             let font = NSFont.systemFont(ofSize: 14, weight: .medium)
             let size = text.size(withAttributes: [.font: font])

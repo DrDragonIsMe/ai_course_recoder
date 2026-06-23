@@ -29,7 +29,7 @@ struct RecordingLayout: Codable, Equatable {
         keyPressOverlay: KeyPressOverlayConfig = KeyPressOverlayConfig(isEnabled: false, position: .bottomRight, maxKeys: 5),
         magnifier: MagnifierConfig = MagnifierConfig(isEnabled: false, targetPoint: .zero, radius: 60, scale: 2),
         stepAnnotation: StepAnnotationConfig = StepAnnotationConfig(isEnabled: false, steps: []),
-        subtitle: SubtitleConfig = SubtitleConfig(isEnabled: false, bilingual: false),
+        subtitle: SubtitleConfig = SubtitleConfig(isEnabled: false, bilingual: false, entries: []),
         chapterProgress: ChapterProgressConfig = ChapterProgressConfig(isEnabled: false, chapters: [], currentChapter: 0)
     ) {
         self.name = name

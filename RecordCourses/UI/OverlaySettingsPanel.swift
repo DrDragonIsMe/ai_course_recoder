@@ -110,6 +110,7 @@ struct OverlaySettingsPanel: View {
 
             let content = try String(contentsOf: url, encoding: .utf8)
             let entries = SubtitleLoader.parse(srt: content)
+            layout.subtitle.entries = entries
             importedSubtitleCount = entries.count
             showImportConfirmation = entries.count > 0
         } catch {

@@ -14,8 +14,10 @@ struct CursorHighlightRenderer: OverlayRenderer {
         context.saveGState()
 
         // Outer glow
-        context.setFillColor(color.copy(alpha: 0.2)!)
-        context.fillEllipse(in: CGRect(x: position.x - config.radius, y: position.y - config.radius, width: config.radius * 2, height: config.radius * 2))
+        if let outerColor = color.copy(alpha: 0.2) {
+            context.setFillColor(outerColor)
+            context.fillEllipse(in: CGRect(x: position.x - config.radius, y: position.y - config.radius, width: config.radius * 2, height: config.radius * 2))
+        }
 
         // Inner dot
         context.setFillColor(color)
