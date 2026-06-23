@@ -41,6 +41,9 @@ final class RecordingViewModel: ObservableObject {
     /// Annotation session exposed to the annotation toolbar.
     @Published var annotationSession: AnnotationSession?
 
+    /// Whether annotation drawing mode is currently active.
+    @Published var isAnnotationDrawingModeEnabled: Bool = false
+
     /// Camera capture session for live preview.
     @Published var cameraSession: AVCaptureSession?
 
@@ -93,6 +96,7 @@ final class RecordingViewModel: ObservableObject {
     /// Toggle annotation drawing mode on the overlay window.
     func toggleAnnotationDrawingMode() {
         pipeline.toggleAnnotationDrawingMode()
+        isAnnotationDrawingModeEnabled.toggle()
     }
 
     /// Stop recording.
@@ -118,6 +122,11 @@ final class RecordingViewModel: ObservableObject {
     private func hideFloatingToolbar() {
         floatingToolbar?.orderOut(nil)
         floatingToolbar = nil
+    }
+
+    /// Open the app settings/preferences window.
+    func openSettingsWindow() {
+        NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
     }
 
     /// Open privacy settings to grant screen recording permission.

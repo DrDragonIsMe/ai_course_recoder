@@ -74,6 +74,18 @@ struct FloatingToolbarContent: View {
 
             Spacer()
 
+            Button(action: {
+                viewModel.toggleAnnotationDrawingMode()
+            }) {
+                Image(systemName: viewModel.isAnnotationDrawingModeEnabled ? "pencil.circle.fill" : "pencil.circle")
+                    .font(.title3)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(viewModel.isAnnotationDrawingModeEnabled ? Color.accentColor : .white)
+            .help("Toggle annotation drawing mode")
+
+            Spacer()
+
             Text(viewModel.durationString)
                 .font(.system(.body, design: .monospaced))
                 .foregroundStyle(.white)

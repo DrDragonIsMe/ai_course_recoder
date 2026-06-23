@@ -88,6 +88,14 @@ struct RecordingWindow: View {
             Text("Record Courses")
                 .font(.headline)
             Spacer()
+            Button(action: {
+                viewModel.openSettingsWindow()
+            }) {
+                Image(systemName: "gearshape")
+                    .font(.title3)
+            }
+            .buttonStyle(.plain)
+            .help("Settings")
             statusBadge
         }
         .padding(.horizontal, 20)

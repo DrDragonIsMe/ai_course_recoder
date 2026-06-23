@@ -24,7 +24,8 @@ final class AnnotationOverlayWindow: NSWindow {
 
         self.isOpaque = false
         self.backgroundColor = .clear
-        self.level = .screenSaver
+        // One level above the floating toolbar so drawing mode is never blocked.
+        self.level = .init(rawValue: NSWindow.Level.screenSaver.rawValue + 1)
         self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         // Ignore mouse events by default so the user can interact with apps and the toolbar.
         self.ignoresMouseEvents = true

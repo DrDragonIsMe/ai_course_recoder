@@ -9,6 +9,9 @@ final class AudioCaptureService: NSObject {
     /// Callback for each captured audio sample buffer.
     var onAudioSample: ((CMSampleBuffer) -> Void)?
 
+    /// Format description of the active audio stream, available after start().
+    private(set) var audioFormatDescription: CMFormatDescription?
+
     /// Discover available microphones.
     static func availableMicrophones() -> [AVCaptureDevice] {
         let discovery = AVCaptureDevice.DiscoverySession(
@@ -43,6 +46,7 @@ final class AudioCaptureService: NSObject {
 
         session.commitConfiguration()
         session.startRunning()
+        audioFormatDescription = mic.activeFormat.formatDescription
     }
 
     /// Stop audio capture.

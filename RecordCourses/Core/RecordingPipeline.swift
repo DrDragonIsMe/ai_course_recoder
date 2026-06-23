@@ -61,15 +61,10 @@ final class RecordingPipeline: ObservableObject {
             // 2. Generate output file URL
             let outputURL = generateOutputURL()
 
-            // 3. Initialize asset writer
-            let writer = RecordingAssetWriter()
-            try writer.start(url: outputURL, width: targetDisplay.width, height: targetDisplay.height, config: config)
-            assetWriter = writer
-
-            // 4. Initialize video compositor
+            // 3. Initialize video compositor
             videoCompositor = VideoCompositor(layout: config.layout)
 
-            // 5. Initialize annotation session and overlay
+            // 4. Initialize annotation session and overlay
             let annotationSession = AnnotationSession()
             self.annotationSession = annotationSession
             let overlayWindow = AnnotationOverlayWindow(annotationSession: annotationSession)
@@ -77,16 +72,6 @@ final class RecordingPipeline: ObservableObject {
             overlayWindow.show()
             annotationOverlayWindow = overlayWindow
             self.objectWillChange.send()
-
-            // 4. Start screen capture
-            let screenCap = ScreenCaptureService()
-            try await screenCap.start(display: targetDisplay, config: config)
-            screenCap.onFrame = { [weak self] sampleBuffer, timestamp in
-                Task { @MainActor in
-                    self?.handleScreenFrame(sampleBuffer, timestamp: timestamp)
-                }
-            }
-            screenCapture = screenCap
 
             // 5. Start camera capture (if enabled)
             if config.enableCamera {
@@ -96,20 +81,45 @@ final class RecordingPipeline: ObservableObject {
                 cameraSession = camCap.session
             }
 
-            // 6. Start audio capture (if enabled)
+            // 6. Start audio capture (if enabled) so we know its format before creating the writer
+            var audioFormatDescription: CMFormatDescription?
             if config.enableMicrophone {
                 let audioCap = AudioCaptureService()
                 try await audioCap.start()
+                audioFormatDescription = audioCap.audioFormatDescription
                 audioCap.onAudioSample = { [weak self] sampleBuffer in
-                    self?.handleAudioSample(sampleBuffer)
+                    Task { @MainActor in
+                        self?.handleAudioSample(sampleBuffer)
+                    }
                 }
                 audioCapture = audioCap
             }
 
-            // 7. Start overlay state trackers
+            // 7. Initialize asset writer (after camera/audio so audio format is known)
+            let writer = RecordingAssetWriter()
+            try writer.start(
+                url: outputURL,
+                width: targetDisplay.width,
+                height: targetDisplay.height,
+                config: config,
+                audioFormatDescription: audioFormatDescription
+            )
+            assetWriter = writer
+
+            // 8. Start screen capture
+            let screenCap = ScreenCaptureService()
+            try await screenCap.start(display: targetDisplay, config: config)
+            screenCap.onFrame = { [weak self] sampleBuffer, timestamp in
+                Task { @MainActor in
+                    self?.handleScreenFrame(sampleBuffer, timestamp: timestamp)
+                }
+            }
+            screenCapture = screenCap
+
+            // 9. Start overlay state trackers
             startOverlayTrackers()
 
-            // 8. Start duration timer
+            // 10. Start duration timer
             startTime = Date()
             startTimer()
 

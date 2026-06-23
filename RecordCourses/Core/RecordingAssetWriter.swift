@@ -10,7 +10,14 @@ final class RecordingAssetWriter {
     private var isReady = false
 
     /// Start writing to the given URL.
-    func start(url: URL, width: Int, height: Int, config: RecordingConfig) throws {
+    /// Pass the microphone's `CMFormatDescription` so audio settings match the captured format.
+    func start(
+        url: URL,
+        width: Int,
+        height: Int,
+        config: RecordingConfig,
+        audioFormatDescription: CMFormatDescription? = nil
+    ) throws {
         // Remove existing file
         if FileManager.default.fileExists(atPath: url.path()) {
             try? FileManager.default.removeItem(at: url)
@@ -38,8 +45,11 @@ final class RecordingAssetWriter {
         }
 
         // Pixel buffer adaptor
+        guard let videoInput = videoInput else {
+            throw RecordingError.unknown("Could not create video writer input")
+        }
         let adaptor = AVAssetWriterInputPixelBufferAdaptor(
-            assetWriterInput: videoInput!,
+            assetWriterInput: videoInput,
             sourcePixelBufferAttributes: [
                 kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
                 kCVPixelBufferWidthKey as String: width,
@@ -48,43 +58,55 @@ final class RecordingAssetWriter {
         )
         videoAdaptor = adaptor
 
-        // Audio input
-        let audioSettings: [String: Any] = [
-            AVFormatIDKey: kAudioFormatMPEG4AAC,
-            AVSampleRateKey: 48000,
-            AVNumberOfChannelsKey: 2,
-            AVEncoderBitRateKey: 128000,
-        ]
+        // Audio input (only if microphone is enabled and we have a format description)
+        if config.enableMicrophone, let audioFormatDescription = audioFormatDescription {
+            var channelCount: Int = 2
+            var sampleRate: Double = 48000
+            if let asbd = CMAudioFormatDescriptionGetStreamBasicDescription(audioFormatDescription) {
+                channelCount = Int(asbd.pointee.mChannelsPerFrame)
+                sampleRate = asbd.pointee.mSampleRate
+            }
 
-        audioInput = AVAssetWriterInput(mediaType: .audio, outputSettings: audioSettings)
-        audioInput?.expectsMediaDataInRealTime = true
+            let audioSettings: [String: Any] = [
+                AVFormatIDKey: kAudioFormatMPEG4AAC,
+                AVSampleRateKey: sampleRate,
+                AVNumberOfChannelsKey: channelCount,
+                AVEncoderBitRateKey: 128000,
+            ]
 
-        if let audioInput = audioInput, writer?.canAdd(audioInput) == true {
-            writer?.add(audioInput)
+            let input = AVAssetWriterInput(mediaType: .audio, outputSettings: audioSettings, sourceFormatHint: audioFormatDescription)
+            input.expectsMediaDataInRealTime = true
+
+            if writer?.canAdd(input) == true {
+                writer?.add(input)
+                audioInput = input
+            }
         }
 
-        writer?.startWriting()
+        guard writer?.startWriting() == true else {
+            throw RecordingError.writerFailed(writer?.error ?? RecordingError.unknown("Asset writer failed to start"))
+        }
         isReady = false
     }
 
     /// Append a video frame.
     func appendVideoFrame(_ pixelBuffer: CVPixelBuffer, timestamp: CMTime) -> Bool {
         guard let writer, writer.status == .writing,
-              let videoInput, videoInput.isReadyForMoreMediaData,
-              let videoAdaptor else { return false }
+              let videoInput, let videoAdaptor else { return false }
 
         if !isReady {
             writer.startSession(atSourceTime: timestamp)
             isReady = true
         }
 
+        guard videoInput.isReadyForMoreMediaData else { return false }
         return videoAdaptor.append(pixelBuffer, withPresentationTime: timestamp)
     }
 
     /// Append an audio sample buffer.
     func appendAudioSample(_ sampleBuffer: CMSampleBuffer) -> Bool {
         guard let writer, writer.status == .writing,
-              let audioInput, audioInput.isReadyForMoreMediaData else { return false }
+              let audioInput else { return false }
 
         if !isReady {
             let timestamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
@@ -92,6 +114,7 @@ final class RecordingAssetWriter {
             isReady = true
         }
 
+        guard audioInput.isReadyForMoreMediaData else { return false }
         return audioInput.append(sampleBuffer)
     }
 
