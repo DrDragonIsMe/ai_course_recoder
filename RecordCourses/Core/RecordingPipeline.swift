@@ -2,6 +2,7 @@ import Foundation
 import ScreenCaptureKit
 import AVFoundation
 import AppKit
+import Combine
 
 /// Orchestrates the full recording lifecycle: screen + camera + audio → file.
 @MainActor
@@ -29,6 +30,16 @@ final class RecordingPipeline: ObservableObject {
     private var startTime: Date?
     private var timer: Timer?
     private var config: RecordingConfig = .saved
+
+    private var cursorTracker: CursorTracker?
+    private var keyPressMonitor: KeyPressMonitor?
+    private var cancellables = Set<AnyCancellable>()
+
+    private var cursorPosition: CGPoint = .zero
+    private var cursorClickProgress: CGFloat = 0
+    private var recentKeys: [String] = []
+    private var currentSubtitle: (primary: String, secondary: String?) = ("", nil)
+    private var recordingProgress: CGFloat = 0
 
     // MARK: - Public
 
@@ -95,7 +106,10 @@ final class RecordingPipeline: ObservableObject {
                 audioCapture = audioCap
             }
 
-            // 7. Start duration timer
+            // 7. Start overlay state trackers
+            startOverlayTrackers()
+
+            // 8. Start duration timer
             startTime = Date()
             startTimer()
 
@@ -124,6 +138,13 @@ final class RecordingPipeline: ObservableObject {
         screenCapture?.stop()
         cameraCapture?.stop()
         audioCapture?.stop()
+
+        // Stop overlay trackers
+        cursorTracker?.stop()
+        cursorTracker = nil
+        keyPressMonitor?.stop()
+        keyPressMonitor = nil
+        cancellables.removeAll()
 
         // Stop timer
         timer?.invalidate()
@@ -165,7 +186,19 @@ final class RecordingPipeline: ObservableObject {
         if let compositor = videoCompositor {
             let webcamFrame = cameraCapture?.latestFrame().flatMap { CMSampleBufferGetImageBuffer($0) }
             let strokes = annotationSession?.strokes ?? []
-            if let frame = compositor.composite(screenFrame: pixelBuffer, webcamFrame: webcamFrame, strokes: strokes) {
+            if let start = startTime {
+                recordingProgress = CGFloat(min(Date().timeIntervalSince(start) / 60.0, 1.0))
+            }
+            if let frame = compositor.composite(
+                screenFrame: pixelBuffer,
+                webcamFrame: webcamFrame,
+                strokes: strokes,
+                cursorPosition: cursorPosition,
+                cursorClickProgress: cursorClickProgress,
+                recentKeys: recentKeys,
+                subtitle: currentSubtitle,
+                progress: recordingProgress
+            ) {
                 compositedFrame = frame
             } else {
                 compositedFrame = pixelBuffer
@@ -193,6 +226,28 @@ final class RecordingPipeline: ObservableObject {
         let directory = config.outputDirectory
             ?? FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first!
         return directory.appendingPathComponent(fileName)
+    }
+
+    private func startOverlayTrackers() {
+        let tracker = CursorTracker()
+        tracker.start()
+        tracker.$position
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] position in self?.cursorPosition = position }
+            .store(in: &cancellables)
+        tracker.$clickProgress
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] progress in self?.cursorClickProgress = progress }
+            .store(in: &cancellables)
+        cursorTracker = tracker
+
+        let monitor = KeyPressMonitor()
+        monitor.start()
+        monitor.$recentKeys
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] keys in self?.recentKeys = keys }
+            .store(in: &cancellables)
+        keyPressMonitor = monitor
     }
 
     private func startTimer() {

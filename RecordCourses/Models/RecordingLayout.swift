@@ -7,15 +7,42 @@ struct RecordingLayout: Codable, Equatable {
     var cameraLayout: CameraLayout
     var backgroundColorHex: String
 
+    var watermark: WatermarkConfig
+    var cursorHighlight: CursorHighlightConfig
+    var keyPressOverlay: KeyPressOverlayConfig
+    var magnifier: MagnifierConfig
+    var stepAnnotation: StepAnnotationConfig
+    var subtitle: SubtitleConfig
+    var chapterProgress: ChapterProgressConfig
+
     var backgroundColor: CGColor {
         NSColor(hex: backgroundColorHex)?.cgColor ?? NSColor.black.cgColor
     }
 
-    init(name: String, screenRegion: LayoutRegion, cameraLayout: CameraLayout, backgroundColorHex: String) {
+    init(
+        name: String,
+        screenRegion: LayoutRegion,
+        cameraLayout: CameraLayout,
+        backgroundColorHex: String,
+        watermark: WatermarkConfig = WatermarkConfig(isEnabled: false, logoText: "", instructorName: "", position: .bottomRight),
+        cursorHighlight: CursorHighlightConfig = CursorHighlightConfig(isEnabled: false, colorHex: "#FF0000", radius: 20, showClicks: true),
+        keyPressOverlay: KeyPressOverlayConfig = KeyPressOverlayConfig(isEnabled: false, position: .bottomRight, maxKeys: 5),
+        magnifier: MagnifierConfig = MagnifierConfig(isEnabled: false, targetPoint: .zero, radius: 60, scale: 2),
+        stepAnnotation: StepAnnotationConfig = StepAnnotationConfig(isEnabled: false, steps: []),
+        subtitle: SubtitleConfig = SubtitleConfig(isEnabled: false, bilingual: false),
+        chapterProgress: ChapterProgressConfig = ChapterProgressConfig(isEnabled: false, chapters: [], currentChapter: 0)
+    ) {
         self.name = name
         self.screenRegion = screenRegion
         self.cameraLayout = cameraLayout
         self.backgroundColorHex = backgroundColorHex
+        self.watermark = watermark
+        self.cursorHighlight = cursorHighlight
+        self.keyPressOverlay = keyPressOverlay
+        self.magnifier = magnifier
+        self.stepAnnotation = stepAnnotation
+        self.subtitle = subtitle
+        self.chapterProgress = chapterProgress
     }
 
     static func fullScreen() -> RecordingLayout {

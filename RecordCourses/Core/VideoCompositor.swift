@@ -12,8 +12,17 @@ final class VideoCompositor {
         self.layout = layout
     }
 
-    /// Composite a screen frame with optional webcam overlay and annotation strokes.
-    func composite(screenFrame: CVPixelBuffer, webcamFrame: CVPixelBuffer?, strokes: [Stroke]) -> CVPixelBuffer? {
+    /// Composite a screen frame with optional webcam overlay, annotations, and layout-driven overlays.
+    func composite(
+        screenFrame: CVPixelBuffer,
+        webcamFrame: CVPixelBuffer?,
+        strokes: [Stroke],
+        cursorPosition: CGPoint = .zero,
+        cursorClickProgress: CGFloat = 0,
+        recentKeys: [String] = [],
+        subtitle: (primary: String, secondary: String?) = ("", nil),
+        progress: CGFloat = 0
+    ) -> CVPixelBuffer? {
         let containerSize = CGSize(
             width: CVPixelBufferGetWidth(screenFrame),
             height: CVPixelBufferGetHeight(screenFrame)
@@ -48,6 +57,18 @@ final class VideoCompositor {
         if !strokes.isEmpty {
             drawStrokes(strokes, in: context)
         }
+
+        // Draw layout-driven overlays.
+        drawOverlays(
+            in: containerRect,
+            context: context,
+            screenFrame: screenFrame,
+            cursorPosition: cursorPosition,
+            cursorClickProgress: cursorClickProgress,
+            recentKeys: recentKeys,
+            subtitle: subtitle,
+            progress: progress
+        )
 
         return outputBuffer
     }
@@ -168,6 +189,45 @@ final class VideoCompositor {
             y: end.y - arrowLength * sin(angle + arrowAngle)
         ))
         context.strokePath()
+    }
+
+    // MARK: - Overlays
+
+    private func drawOverlays(
+        in containerRect: CGRect,
+        context: CGContext,
+        screenFrame: CVPixelBuffer,
+        cursorPosition: CGPoint,
+        cursorClickProgress: CGFloat,
+        recentKeys: [String],
+        subtitle: (primary: String, secondary: String?),
+        progress: CGFloat
+    ) {
+        let sourceImage = cgImage(from: screenFrame)
+
+        StepAnnotationRenderer(config: layout.stepAnnotation)
+            .draw(in: containerRect, context: context)
+
+        CursorHighlightRenderer(
+            config: layout.cursorHighlight,
+            position: cursorPosition,
+            clickProgress: cursorClickProgress
+        ).draw(in: containerRect, context: context)
+
+        KeyPressRenderer(config: layout.keyPressOverlay, recentKeys: recentKeys)
+            .draw(in: containerRect, context: context)
+
+        MagnifierRenderer(config: layout.magnifier, sourceImage: sourceImage)
+            .draw(in: containerRect, context: context)
+
+        SubtitleRenderer(config: layout.subtitle, primary: subtitle.primary, secondary: subtitle.secondary)
+            .draw(in: containerRect, context: context)
+
+        ChapterProgressRenderer(config: layout.chapterProgress, progress: progress)
+            .draw(in: containerRect, context: context)
+
+        WatermarkRenderer(config: layout.watermark)
+            .draw(in: containerRect, context: context)
     }
 
     // MARK: - Helpers

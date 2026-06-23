@@ -21,6 +21,7 @@ struct RecordingWindow: View {
                 VStack(spacing: 24) {
                     captureModeSection
                     layoutSection
+                    overlaySettingsSection
                     displaySection
                     videoSettingsSection
                     audioSettingsSection
@@ -154,6 +155,15 @@ struct RecordingWindow: View {
         .padding()
         .background(Color(NSColor.controlBackgroundColor))
         .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    // MARK: - Overlay Settings
+
+    private var overlaySettingsSection: some View {
+        OverlaySettingsPanel(layout: $viewModel.config.layout)
+            .padding()
+            .background(Color(NSColor.controlBackgroundColor))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
     // MARK: - Display Selection
