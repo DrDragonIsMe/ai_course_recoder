@@ -85,8 +85,9 @@ final class RecordingViewModel: ObservableObject {
         config.selectedDisplayID = selectedDisplayID
         RecordingConfig.saved = config
 
-        showFloatingToolbar()
         await pipeline.start(config: config)
+        // Show the toolbar after the overlay window is created so it stays on top.
+        showFloatingToolbar()
     }
 
     /// Stop recording.

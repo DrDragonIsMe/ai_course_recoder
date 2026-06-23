@@ -20,11 +20,12 @@ final class FloatingToolbarWindow: NSPanel {
 
         self.isOpaque = false
         self.backgroundColor = .clear
-        self.level = .floating
-        self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        self.level = .screenSaver
+        self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         self.isFloatingPanel = true
         self.worksWhenModal = true
         self.hidesOnDeactivate = false
+        self.ignoresMouseEvents = false
 
         setupContent()
         observeViewModel()
@@ -32,8 +33,11 @@ final class FloatingToolbarWindow: NSPanel {
     }
 
     private func setupContent() {
-        let contentView = NSHostingView(rootView: FloatingToolbarContent(viewModel: viewModel))
-        self.contentView = contentView
+        let hostingView = NSHostingView(rootView: FloatingToolbarContent(viewModel: viewModel))
+        hostingView.frame = NSRect(x: 0, y: 0, width: 320, height: 64)
+        hostingView.autoresizingMask = [.width, .height]
+        self.contentView = hostingView
+        self.hostingView = hostingView
     }
 
     private func observeViewModel() {
