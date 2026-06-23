@@ -4,6 +4,7 @@ import SwiftUI
 struct RecordingWindow: View {
     @EnvironmentObject var viewModel: RecordingViewModel
     @State private var showPermissionAlert = false
+    @State private var keyMonitor: Any?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -43,6 +44,17 @@ struct RecordingWindow: View {
         }
         .task {
             await viewModel.loadDisplays()
+        }
+        .onAppear {
+            keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+                handleKeyEvent(event)
+                return event
+            }
+        }
+        .onDisappear {
+            if let keyMonitor = keyMonitor {
+                NSEvent.removeMonitor(keyMonitor)
+            }
         }
         .alert("Recording Error", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK", role: .cancel) {
@@ -280,6 +292,55 @@ struct RecordingWindow: View {
         .padding()
         .background(Color(NSColor.controlBackgroundColor))
         .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    // MARK: - Keyboard Shortcuts
+
+    private func handleKeyEvent(_ event: NSEvent) {
+        // Only process shortcuts while recording.
+        guard viewModel.isRecording else { return }
+
+        let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        let isCommand = modifiers.contains(.command)
+        let isShift = modifiers.contains(.shift)
+        let character = event.charactersIgnoringModifiers?.lowercased()
+
+        // Cmd+Shift+A: toggle annotation drawing mode
+        if isCommand && isShift && character == "a" {
+            viewModel.toggleAnnotationDrawingMode()
+            return
+        }
+
+        // Cmd+Shift+S: stop recording
+        if isCommand && isShift && character == "s" {
+            Task {
+                await viewModel.stopRecording()
+            }
+            return
+        }
+
+        // Tool shortcuts (only work when annotation session is active)
+        guard let annotationSession = viewModel.annotationSession else { return }
+
+        if !isCommand && !isShift {
+            switch character {
+            case "1": annotationSession.currentTool = .pen
+            case "2": annotationSession.currentTool = .arrow
+            case "3": annotationSession.currentTool = .rectangle
+            case "4": annotationSession.currentTool = .circle
+            case "5": annotationSession.currentTool = .eraser
+            case "r": annotationSession.currentColor = .red
+            case "o": annotationSession.currentColor = .orange
+            case "y": annotationSession.currentColor = .yellow
+            case "g": annotationSession.currentColor = .green
+            case "b": annotationSession.currentColor = .blue
+            case "p": annotationSession.currentColor = .purple
+            case "w": annotationSession.currentColor = .white
+            case "k": annotationSession.currentColor = .black
+            default:
+                break
+            }
+        }
     }
 
     // MARK: - Helpers

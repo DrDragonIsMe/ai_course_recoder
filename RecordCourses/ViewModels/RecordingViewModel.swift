@@ -90,6 +90,11 @@ final class RecordingViewModel: ObservableObject {
         showFloatingToolbar()
     }
 
+    /// Toggle annotation drawing mode on the overlay window.
+    func toggleAnnotationDrawingMode() {
+        pipeline.toggleAnnotationDrawingMode()
+    }
+
     /// Stop recording.
     func stopRecording() async {
         await pipeline.stop()

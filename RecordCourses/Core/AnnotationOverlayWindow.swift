@@ -4,10 +4,13 @@ import SwiftUI
 import ScreenCaptureKit
 import Combine
 
-/// A transparent, borderless, click-through window that shows annotation strokes over the captured display.
+/// A transparent, borderless overlay window that shows annotation strokes over the captured display.
+/// Mouse events are ignored by default; the user toggles drawing mode with a keyboard shortcut.
 final class AnnotationOverlayWindow: NSWindow {
     private let annotationSession: AnnotationSession
-    private var trackingArea: NSTrackingArea?
+
+    /// Whether the overlay currently captures mouse events for drawing.
+    private(set) var isDrawingModeEnabled = false
 
     init(annotationSession: AnnotationSession) {
         self.annotationSession = annotationSession
@@ -23,7 +26,8 @@ final class AnnotationOverlayWindow: NSWindow {
         self.backgroundColor = .clear
         self.level = .screenSaver
         self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        self.ignoresMouseEvents = false
+        // Ignore mouse events by default so the user can interact with apps and the toolbar.
+        self.ignoresMouseEvents = true
         self.hasShadow = false
 
         self.contentView = AnnotationOverlayView(annotationSession: annotationSession)
@@ -43,6 +47,16 @@ final class AnnotationOverlayWindow: NSWindow {
     /// Hide the overlay window.
     func hide() {
         orderOut(nil)
+    }
+
+    /// Toggle whether the overlay captures mouse events for annotation drawing.
+    func toggleDrawingMode() {
+        isDrawingModeEnabled.toggle()
+        ignoresMouseEvents = !isDrawingModeEnabled
+        // Bring overlay to front when entering drawing mode so it receives strokes.
+        if isDrawingModeEnabled {
+            orderFrontRegardless()
+        }
     }
 }
 

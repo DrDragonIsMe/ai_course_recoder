@@ -14,6 +14,9 @@ final class RecordingPipeline: ObservableObject {
     /// Active annotation session while recording. Exposed so the UI can show the annotation toolbar.
     private(set) var annotationSession: AnnotationSession?
 
+    /// Annotation overlay window. Exposed so the UI can toggle drawing mode.
+    private(set) var annotationOverlayWindow: AnnotationOverlayWindow?
+
     /// Camera capture session, exposed for live preview.
     private(set) var cameraSession: AVCaptureSession?
 
@@ -22,7 +25,6 @@ final class RecordingPipeline: ObservableObject {
     private var audioCapture: AudioCaptureService?
     private var assetWriter: RecordingAssetWriter?
     private var videoCompositor: VideoCompositor?
-    private var annotationOverlayWindow: AnnotationOverlayWindow?
 
     private var startTime: Date?
     private var timer: Timer?
@@ -112,6 +114,11 @@ final class RecordingPipeline: ObservableObject {
             self.error = .captureFailed(unexpectedError)
             state = .idle
         }
+    }
+
+    /// Toggle annotation drawing mode on the overlay window.
+    func toggleAnnotationDrawingMode() {
+        annotationOverlayWindow?.toggleDrawingMode()
     }
 
     /// Stop recording.
