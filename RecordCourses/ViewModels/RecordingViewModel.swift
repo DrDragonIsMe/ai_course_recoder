@@ -171,6 +171,18 @@ final class RecordingViewModel: ObservableObject {
                 await stopRecording()
             }
         }
+
+        // Annotation-only shortcuts while drawing mode is active.
+        guard isAnnotationDrawingModeEnabled else { return }
+
+        if event.keyCode == 53 {
+            toggleAnnotationDrawingMode()
+            return
+        }
+
+        if !isCommand, character == "c" {
+            annotationSession?.clearAll()
+        }
     }
 
     /// Open the app settings/preferences window.

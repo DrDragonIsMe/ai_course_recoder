@@ -338,6 +338,19 @@ struct RecordingWindow: View {
             return
         }
 
+        // Annotation-only shortcuts while drawing mode is active.
+        guard viewModel.isAnnotationDrawingModeEnabled else { return }
+
+        if event.keyCode == 53 {
+            viewModel.toggleAnnotationDrawingMode()
+            return
+        }
+
+        if !isCommand && character == "c" {
+            viewModel.annotationSession?.clearAll()
+            return
+        }
+
         // Tool shortcuts (only work when annotation session is active)
         guard let annotationSession = viewModel.annotationSession else { return }
 
